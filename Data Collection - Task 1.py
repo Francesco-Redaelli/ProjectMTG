@@ -2,7 +2,7 @@
 # Picchia - Petroni - Redaelli
 # Task 1: Data Collection
 
-# Import libraries
+# Import the required libraries
 import requests
 import json
 import random
@@ -16,31 +16,35 @@ print(response.headers["link"]) # Identify the total number of API pages availab
 dataset = {"cards":[]}
 
 # Make a GET request to all the API pages and store the retrieved data
-for number in range(1, 5):
+for number in range(1, 624):
     response = requests.get("https://api.magicthegathering.io/v1/cards?page={}".format(number)) # GET request
     page = json.loads(response.text) # Extract the text from the response
     #print(response.headers["ratelimit-remaining"]) # Print the proportion of API request per hour remaining (out of 1000)
     dataset["cards"] += page["cards"] # Store the retrieved data
     print("Page number: {}".format(number)) # Keep track of the progess
 
-# Check the total number of observations
-nobs = len(dataset["cards"])
-print("Number of observations: {}".format(nobs))
+# Check the total number of retrieved observations
+n_obs = len(dataset["cards"])
+print("Number of retrieved observations: {}".format(n_obs))
 
 # Initialize a new dictionary
 final_dataset = {"cards":[]}
 
-# Select 10K observation at random, without replacement
-# Avoid including cards for which "multiverseid" is NULL
-# (special editions of the same card, recorded as different observations)
+# Select 10K observations at random, without replacement
+# Preliminary data cleaning:
+# avoid including cards for which the "multiverseid" parameter is NULL (further info in the Documentation)
 
-datasetsize = 0
+datasetsize = 0 # Keep track of the number of observations selected
+obs_selected = set() # Initialize a set containing the indexes of the selected observations
 
-while datasetsize<100:
-    index = random.randint(0, nobs-1) # Select a random observation
+random.seed(2021) # Set seed for reproducibility
+while datasetsize<10000:
+    index = random.randint(0, n_obs-1) # Select a random observation
+    if index in obs_selected: continue # Ignore the observation if it was already selected
     if "multiverseid" in dataset["cards"][index]: # If "multiverseid" is NOT NULL
-        print(dataset["cards"][index])
-        final_dataset["cards"] += dataset["cards"][index]  # Add the observation
+        myobs = dataset["cards"][index]
+        final_dataset["cards"].append(myobs) # Add the observation to the final dataset
+        obs_selected.add(index) #Add observation index to the set
         datasetsize+=1
         print("Observation number: {}".format(datasetsize))  # Keep track of the progess
 
@@ -52,5 +56,5 @@ with open("mtg_dataset.json", "w") as myfile:
 with open("mtg_dataset.json", "r") as myfile:
     mtg_dataset = json.load(myfile)
 
-# Check the final number of observations
-print("Number of observations: {}".format(len(mtg_dataset["cards"])))
+# Check the number of observations in the final dataset
+print("Number of observations in the final dataset: {}".format(len(mtg_dataset["cards"])))
