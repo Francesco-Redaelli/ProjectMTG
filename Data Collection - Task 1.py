@@ -32,10 +32,12 @@ final_dataset = {"cards":[]}
 
 # Select 10K observations at random, without replacement
 # Preliminary data cleaning:
+# avoid including different editions of the same card (same "name" parameter value)
 # avoid including cards for which the "multiverseid" parameter is NULL (further info in the Documentation)
 
 datasetsize = 0 # Keep track of the number of observations selected
 obs_selected = set() # Initialize a set containing the indexes of the selected observations
+card_names = set() # Initialize a set containing the "name" parameter values of the selected observations
 
 random.seed(2021) # Set seed for reproducibility
 while datasetsize<10000:
@@ -43,8 +45,10 @@ while datasetsize<10000:
     if index in obs_selected: continue # Ignore the observation if it was already selected
     if "multiverseid" in dataset["cards"][index]: # If "multiverseid" is NOT NULL
         myobs = dataset["cards"][index]
+        if myobs["name"] in card_names: continue # Ignore if an observation with the same "name" parameter value was already selected
         final_dataset["cards"].append(myobs) # Add the observation to the final dataset
-        obs_selected.add(index) #Add observation index to the set
+        obs_selected.add(index) # Add observation index to the indexes set
+        card_names.add(myobs["name"]) # Add observation "name" to the card names set
         datasetsize+=1
         print("Observation number: {}".format(datasetsize))  # Keep track of the progess
 
@@ -58,3 +62,9 @@ with open("mtg_dataset.json", "r") as myfile:
 
 # Check the number of observations in the final dataset
 print("Number of observations in the final dataset: {}".format(len(mtg_dataset["cards"])))
+
+# Check the number of unique cards in the final dataset
+unique_names = set()
+for card in mtg_dataset["cards"]:
+    unique_names.add(card["name"])
+print("Number of unique cards in the final dataset: {}".format(len(unique_names)))
